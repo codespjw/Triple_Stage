@@ -120,15 +120,15 @@ syms y1 y2
 eq1 = ('y1 = x1 - x2');
 eq2 = ('y2  = x2 -  x3');
 eq3 = ('m1*p^2*x1 = F1 - k1*x1 - b1*p*x1 - k2*y1 - b2*p*y1');
-eq4 = ('m2*p^2*x2 = F2 + k2*y1 + b2*p*y1 - k3*y2 - b2*p*y2');
-eq5 = ('m3*p^2*x3 = F3 + k3*y2 + b3*p*y2');
+eq4 = ('m2*p^2*x2 = F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
+eq5 = ('m3*p^2*x3 = - F2 + k3*y2 + b3*p*y2');
 
 [x1,x2,x3,y1,y2] = solve(eq1,eq2,eq3,eq4,eq5,x1,x2,x3,y1,y2);
-x1 = collect(x1,{p,F1,F2,F3});
-x2 = collect(x2,{p,F1,F2,F3});
-x3 = collect(x3,{p,F1,F2,F3});
-y1 = collect(y1,{p,F1,F2,F3});
-y2 = collect(y2,{p,F1,F2,F3});
+x1 = collect(x1,{p,F1,F2});
+x2 = collect(x2,{p,F1,F2});
+x3 = collect(x3,{p,F1,F2});
+y1 = collect(y1,{p,F1,F2});
+y2 = collect(y2,{p,F1,F2});
 
 %% Find frequency response use transfer function with parameters
 % single-stage with E-Block
