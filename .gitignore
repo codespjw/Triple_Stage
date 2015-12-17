@@ -1,2 +1,7 @@
+# ignore all files temp files
+*.asv
+*~
 
-HddModeling/measfreqresp.m~
+# ignore .pdf or .txt 
+*.pdf
+*.txt
