@@ -5,3 +5,7 @@
 # ignore .pdf or .txt 
 *.pdf
 *.txt
+
+# ignore simulink temp files
+*.r2015a
+*.autosave
