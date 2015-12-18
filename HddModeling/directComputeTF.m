@@ -10,8 +10,8 @@ bodeOpt.xlim = [1e0 1e5];
 
 %% Public Parameters
 % system para
-m1n = 1.0; m2n = 0.2; m3n = 0.02; m4n = 0.02;
-b1n = 0.5; b2n = 0.2; b3n = 0.1; b4n = 0.1;
+m1n = 1.0; m2n = 0.2; m3n = 0.1; m4n = 0.1;
+b1n = 0.9; b2n = 0.8; b3n = 0.8; b4n = 0.8;
 k1n = 1e10; k2n = 1e5; k3n = 1e7; k4n = 1e8;
 % for freqresp
 nf = 1000;
@@ -38,6 +38,11 @@ S.VcmFrdModel = frd(response,Wrad);
 figurename('Single-Stage: F -> PES'); 
 bode(S.VcmFrdModel,bodeOpt);
 
+[a, b, c, d] = linmod('singlestageSimu',[],[],[1e-5 0 1]);
+sys = ss(a,b,c,d);
+figurename('Simu: Single-Stage: F -> PES');
+bode(sys,'-b',S.VcmFrdModel,'--r',bodeOpt);
+
 %% Dual-stage, how to model PZT
 syms m1 m2 m3 b1 b2 b3 k1 k2 k3 F1 F2 x1 x2 x3
 syms p
@@ -45,8 +50,8 @@ syms y1 y2
 eq1 = ('y1 = x1 - x2');
 eq2 = ('y2  = x2 -  x3');
 eq3 = ('m1*p^2*x1 = F1 - k1*x1 - b1*p*x1 - k2*y1 - b2*p*y1');
-eq4 = ('m2*p^2*x2 = F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
-eq5 = ('m3*p^2*x3 = - F2 + k3*y2 + b3*p*y2');
+eq4 = ('m2*p^2*x2 = - F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
+eq5 = ('m3*p^2*x3 = F2 + k3*y2 + b3*p*y2');
 
 [x1,x2,x3,y1,y2] = solve(eq1,eq2,eq3,eq4,eq5,x1,x2,x3,y1,y2);
 x1 = collect(x1,{p,F1,F2});
@@ -73,6 +78,13 @@ D.MaFrdModel = frd(response,Wrad);
 figurename('Dual-Stage: F2 -> PES'); 
 bode(D.MaFrdModel,bodeOpt);
 
+[a, b, c, d] = linmod('dualstageSimu',[],[],[1e-5 0 1]);
+sys = ss(a,b,c,d);
+figurename('Simu: Dual-Stage: F1 -> PES');
+bode(sys(2,1),'-b',D.VcmFrdModel,'--r',bodeOpt);
+
+figurename('Simu: Dual-Stage: F2 -> PES');
+bode(sys(2,2)-sys(2,3),'-b',D.MaFrdModel,'--r',bodeOpt);
 %% Triple-stage, how to model PZT
 syms m1 m2 m3 m4 b1 b2 b3 b4 k1 k2 k3 k4 F1 F2 F3 x1 x2 x3 x4
 syms p
@@ -81,9 +93,9 @@ eq1 = ('y1 = x1 - x2');
 eq2 = ('y2  = x2 -  x3');
 eq3 = ('y3  = x3 -  x4');
 eq4 = ('m1*p^2*x1 = F1 - k1*x1 - b1*p*x1 - k2*y1 - b2*p*y1');
-eq5 = ('m2*p^2*x2 = F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
-eq6 = ('m3*p^2*x3 = - F2 + F3 + k3*y2 + b3*p*y2 - k4*y3 - b4*p*y3');
-eq7 = ('m4*p^2*x4 = - F3 + k4*y3 + b4*p*y3');
+eq5 = ('m2*p^2*x2 = - F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
+eq6 = ('m3*p^2*x3 = F2 - F3 + k3*y2 + b3*p*y2 - k4*y3 - b4*p*y3');
+eq7 = ('m4*p^2*x4 = F3 + k4*y3 + b4*p*y3');
 
 [x1,x2,x3,x4,y1,y2,y3] = solve(eq1,eq2,eq3,eq4,eq5,eq6,eq7,x1,x2,x3,x4,y1,y2,y3);
 x1 = collect(x1,{p,F1,F2,F3});
@@ -118,6 +130,16 @@ T.Ma2FrdModel = frd(response,Wrad);
 figurename('Triple-Stage: F3 -> PES'); 
 bode(T.Ma2FrdModel,bodeOpt);
 
+[a, b, c, d] = linmod('triplestageSimu',[],[],[1e-5 0 1]);
+sys = ss(a,b,c,d);
+figurename('Simu: Triple-Stage: F1 -> PES');
+bode(sys(3,1),'-b',T.VcmFrdModel,'--r',bodeOpt);
+
+figurename('Simu: Triple-Stage: F2 -> PES');
+bode(sys(3,2)-sys(3,3),'-b',T.Ma1FrdModel,'--r',bodeOpt);
+
+figurename('Simu: Triple-Stage: F3 -> PES');
+bode(sys(3,4)-sys(3,5),'-b',T.Ma2FrdModel,'--r',bodeOpt);
 %% Plot together
 figurename('Comparison: VCM');
 bode(S.VcmFrdModel,D.VcmFrdModel,T.VcmFrdModel,bodeOpt);
