@@ -26,7 +26,7 @@ disp('fitfrd id sys')
 zpk(model)
 modelFrd = frd(model,Wrad);
 
-figurename('2nd order system: meas, model'); bode(measfrd,'r',modelFrd,'k:');
+figurename('2nd order system: meas, model'); bode(measfrd,'r',modelFrd,'k:'); grid;
 %% 
 measmag = abs(reshape(measfrd.ResponseData,[],1));
 measagl = angle(reshape(measfrd.ResponseData,[],1));
@@ -59,8 +59,7 @@ end
 [x(:,best) X0t(:,best)]
 [norm(fun(x(:,best))) norm(fun(X0t(:,best)))]
 
-
-%%
+%
 figurename('2nd order system: meas, optimized');
 loglog(Wrad,measmag,'-b');hold all;
 loglog(Wrad,fun(x(:,best))+ measmag,'--r');
@@ -71,87 +70,21 @@ else
     [~,idfrd] = freqRespPara(x(:,best),Wrad);
 end
 figurename('2nd order system: meas, id');
-bode(measfrd,'-b',idfrd,'--r');
+bode(measfrd,'-b',idfrd,'--r'); grid;
 
 %% Mechanical system created by hand
+format long 
 s = tf('s');
 m1 = 1.5; m2 = 0.5; m3 = 0.0003; m4 = 0.002; 
-b1 = 0.1; b2 = 0.2;  b3 = 0.1; b4 = 0.1;
-k1 = 1e10; k2 = 1e4; k3 = 1e6; k4 = 1e3;
+b1 = 0.2; b2 = 0.3;  b3 = 0.2; b4 = 0.1;
+k1 = 1e9; k2 = 1e9; k3 = 1e6; k4 = 1e3;
 Den = m1*m2*s^4 + (b1*m2 + b2*m1 + b2*m2)*s^3 + (b1*b2 + k1*m2 + k2*m1 + k2*m2)*s^2 + (b1*k2 + b2*k1)*s + k1*k2;
+Den1 = m1*m2*s^4 + (m2*b1 + m1*b2)*s^3 + (m1*k2 + m2*k1 + b1*b2)*s^2 + (b1*k2 + b2*k1)*s + (k1*k2);
+
 F_X1 = (m2*s^2 + b2*s + k2)/Den;
+zpk(F_X1)
 F_X2 = (b2*s + k2)/Den;
-
-% Mechnical system created in Simulink
-% Single-Stage
-% Triple-Stage
-% triplestageSimu,singlestageSimu,dualstageSimu
-ns = 2;
-switch ns
-    case 1 
-        stageSimu = 'singlestageSimu';
-    case 2 
-        stageSimu = 'dualstageSimu';
-    case 3 
-        stageSimu = 'triplestageSimu';
-end
-[A, B, C, D] = linmod(stageSimu,[],[],[1e-5 0 1]);
-
-sys = ss(A,B,C,D);
-figure;
-switch ns
-    case 1
-        bode(sys,'-b',F_X2,'--r',bodeOpt);
-    case 2
-        bode(sys(1,2),sys(2,2),bodeOpt);
-        legend('Fv-P2','Fm-P2');
-    case 3
-        bode(sys(1,3),sys(2,3),sys(3,3),bodeOpt);
-        legend('Fv-P3','Fm-P3','Ft-P3');
-        % bode(sys(1,1),sys(1,2),sys(2,1),sys(2,2),bodeOpt);
-        % legend('Fv-P1','Fv-P2','Fm-P1','Fm-P2');
-end
-
-
-%% Dual-stage, how to model PZT
-syms m1 m2 m3 b1 b2 b3 k1 k2 k3 F1 F2 x1 x2 x3
-syms p
-syms y1 y2
-eq1 = ('y1 = x1 - x2');
-eq2 = ('y2  = x2 -  x3');
-eq3 = ('m1*p^2*x1 = F1 - k1*x1 - b1*p*x1 - k2*y1 - b2*p*y1');
-eq4 = ('m2*p^2*x2 = F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
-eq5 = ('m3*p^2*x3 = - F2 + k3*y2 + b3*p*y2');
-
-[x1,x2,x3,y1,y2] = solve(eq1,eq2,eq3,eq4,eq5,x1,x2,x3,y1,y2);
-x1 = collect(x1,{p,F1,F2});
-x2 = collect(x2,{p,F1,F2});
-x3 = collect(x3,{p,F1,F2});
-y1 = collect(y1,{p,F1,F2});
-y2 = collect(y2,{p,F1,F2});
-
-
-%% Triple-stage, how to model PZT
-syms m1 m2 m3 m4 b1 b2 b3 b4 k1 k2 k3 k4 F1 F2 F3 x1 x2 x3 x4
-syms p
-syms y1 y2 y3
-eq1 = ('y1 = x1 - x2');
-eq2 = ('y2  = x2 -  x3');
-eq3 = ('y3  = x3 -  x4');
-eq4 = ('m1*p^2*x1 = F1 - k1*x1 - b1*p*x1 - k2*y1 - b2*p*y1');
-eq5 = ('m2*p^2*x2 = F2 + k2*y1 + b2*p*y1 - k3*y2 - b3*p*y2');
-eq6 = ('m3*p^2*x3 = - F2 + F3 + k3*y2 + b3*p*y2 - k4*y3 - b4*p*y3');
-eq7 = ('m4*p^2*x4 = - F3 + k4*y3 + b4*p*y3');
-
-[x1,x2,x3,x4,y1,y2,y3] = solve(eq1,eq2,eq3,eq4,eq5,eq6,eq7,x1,x2,x3,x4,y1,y2,y3);
-x1 = collect(x1,{p,F1,F2});
-x2 = collect(x2,{p,F1,F2});
-x3 = collect(x3,{p,F1,F2});
-x4 = collect(x4,{p,F1,F2});
-y1 = collect(y1,{p,F1,F2});
-y2 = collect(y2,{p,F1,F2});
-y3 = collect(y3,{p,F1,F2});
-
+zpk(F_X2)
 %% Find frequency response use transfer function with parameters
 % single-stage with E-Block
 
@@ -164,8 +97,8 @@ x1 = collect(x1,{p,u});
 x2 = collect(x2,{p,u});
 y = collect(y,{p,u});
 
-F_X1S= collect(x1/u,u);
-F_X2S= collect(x2/u,u);
+F_X1S = collect(x1/u,u);
+F_X2S = collect(x2/u,u);
 
 X = [0.001 0.01 3e3 1 0.1 1e6].';
 
@@ -175,20 +108,23 @@ Wrad = Wrad.';
 response = double(subs(subs(F_X1S,[m1 b1 k1 m2 b2 k2].',X), p, 1i*Wrad));
 %
 magdB = 20*log10(abs(response));
-figurename('magdB'); semilogx(Wrad,magdB);
+figurename('magdB'); semilogx(Wrad,magdB); grid ;
 
 measfrd = frd(F_X1,Wrad);
 measmag = abs(reshape(measfrd.ResponseData,[],1));
-
+weight = 1./measmag;
+weight1 = measfrd;
+weight1.ResponseData(1,1,:) = weight;
 N = 4; RD = 2;
-model = fitfrd(measfrd,N,RD);
+model = fitfrd(measfrd,N,RD,weight1);
 disp('real system')
 zpk(F_X1)
 disp('id system')
 zpk(model)
 modelFrd = frd(model,Wrad);
 
-figurename('meas, model'); bode(measfrd,'r',modelFrd,'k:');
+figurename('meas, model'); bode(measfrd,'r',modelFrd,'k:'); grid;
+legend('meas','model');
 
 %% construct fun
 clear x resnorm;
@@ -199,14 +135,15 @@ fun = @(x) abs(double(subs(subs(F_X1S,[m1 b1 k1 m2 b2 k2].',x.*X), p, 1i*Wrad)))
 
 % fun = @(p) abs(frsinglestage(p.*X,W))-abs(measFr);
 
-% options = optimoptions('lsqnonlin','Display','iter');
-options = optimoptions('lsqnonlin');
+options = optimoptions('lsqnonlin','Display','iter');
+% options = optimoptions('lsqnonlin');
 X0=ones(size(X))+rand(size(X))*0.8;
-lb= zeros(size(X))+eps;
+% lb= zeros(size(X))+eps;
+lb= ones(size(X));
 ub = ones(size(X))*3;
 
-numiter = 20;
-parpool(5);
+numiter = 10;
+% parpool(5);
 X0t = rand(size(X,1),numiter).*repmat(ub-lb,1,numiter) + repmat(lb,1,numiter);
 parfor i = 1:numiter
     disp(i);
@@ -216,13 +153,12 @@ end
 
 [x(:,best) X0t(:,best)]
 [norm(fun(x(:,best))) norm(fun(X0t(:,best)))]
-
+norm(fun(ones(size(X))))
 
 figure;
 % loglog(abs(measfrd));hold all;
 % loglog(abs( frsinglestage(optimresults1.x .* X, W)))
 
 loglog(Wrad,abs(measmag),'-b');hold all;
-loglog(Wrad,abs(fun(x(:,best))+ measmag),'--r')
-
-
+loglog(Wrad,abs(fun(x(:,best))+ measmag),'--r');
+grid;
