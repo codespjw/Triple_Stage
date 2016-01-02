@@ -9,3 +9,6 @@
 # ignore simulink temp files
 *.r2015a
 *.autosave
+
+# ignore figures
+/Figures/
